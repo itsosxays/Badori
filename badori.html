@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Badori Bank</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    :root {
+      --brand: #0d5c3a; --brand2: #1a8a56; --accent: #f5b820; --brand-light: #e8f5ef;
+      --bg: #f7f8fa; --surface: #fff; --border: #e2e8f0; --border-light: #f1f5f9;
+      --text: #1a202c; --muted: #718096; --light: #a0aec0;
+      --ok: #22c55e; --ok-bg: #f0fdf4; --ok-b: #bbf7d0;
+      --err: #ef4444; --err-bg: #fef2f2; --err-b: #fecaca;
+      --r: 12px; --rsm: 8px; --rlg: 16px;
+      --sh: 0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+      --shm: 0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.06);
+      --shl: 0 10px 15px rgba(0,0,0,.1),0 4px 6px rgba(0,0,0,.05);
+      --font: 'Segoe UI',system-ui,sans-serif;
+      --mono: 'Courier New',monospace;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+    .app{min-height:100vh;display:flex;flex-direction:column}
+    .main{flex:1;max-width:1100px;margin:0 auto;width:100%;padding:32px 24px}
+    .page{display:flex;flex-direction:column;gap:32px}
+    .section{display:flex;flex-direction:column;gap:16px}
+    .loading{text-align:center;padding:80px;color:var(--muted);font-size:16px}
+    .empty{color:var(--muted);text-align:center;padding:40px}
+
+    /* Header */
+    .header{background:var(--brand);color:#fff;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+    .header-inner{max-width:1100px;margin:0 auto;padding:0 24px;height:60px;display:flex;align-items:center;gap:32px}
+    .logo{display:flex;align-items:center;gap:10px;text-decoration:none;cursor:pointer}
+    .logo-mark{width:36px;height:36px;background:var(--accent);color:var(--brand);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px}
+    .logo-text{color:#fff;font-weight:700;font-size:20px;letter-spacing:-.3px}
+    .nav{display:flex;align-items:center;gap:4px;flex:1}
+    .nav-link{color:rgba(255,255,255,.75);text-decoration:none;padding:6px 14px;border-radius:var(--rsm);font-weight:500;font-size:14px;cursor:pointer;transition:all .15s;border:none;background:none}
+    .nav-link:hover{color:#fff;background:rgba(255,255,255,.1)}
+    .nav-link.active{color:#fff;background:rgba(255,255,255,.15)}
+    .header-user{display:flex;align-items:center;gap:12px;margin-left:auto}
+    .user-flag{font-size:20px}
+    .user-name{color:rgba(255,255,255,.9);font-size:14px;font-weight:500}
+    .btn-logout{background:rgba(255,255,255,.12);color:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.2);padding:5px 14px;border-radius:var(--rsm);font-size:13px;cursor:pointer;transition:all .15s}
+    .btn-logout:hover{background:rgba(255,255,255,.2);color:#fff}
+    .footer{background:var(--brand);color:rgba(255,255,255,.6);text-align:center;padding:16px;font-size:13px;margin-top:32px}
+
+    /* Page header */
+    .page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+    .page-header h1{font-size:26px;font-weight:700;letter-spacing:-.4px}
+    .page-subtitle{color:var(--muted);font-size:14px;margin-top:4px}
+    .section h2{font-size:18px;font-weight:600}
+
+    /* Balance hero */
+    .balance-hero{background:linear-gradient(135deg,var(--brand) 0%,var(--brand2) 100%);color:#fff;border-radius:var(--rlg);padding:32px;text-align:center;box-shadow:var(--shm)}
+    .balance-label{font-size:14px;opacity:.8;text-transform:uppercase;letter-spacing:.05em}
+    .balance-amount{font-size:42px;font-weight:800;margin-top:8px;letter-spacing:-1px}
+
+    /* Rate pill */
+    .rate-pill{background:var(--brand-light);color:var(--brand);border:1px solid #c3e6d5;border-radius:100px;padding:6px 14px;font-size:13px;font-weight:500;white-space:nowrap;align-self:flex-start}
+
+    /* Account cards */
+    .accounts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+    .accounts-grid-lg{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+    .account-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rlg);padding:24px;box-shadow:var(--sh);transition:box-shadow .2s;position:relative;overflow:hidden}
+    .account-card:hover{box-shadow:var(--shm)}
+    .account-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px}
+    .account-card.checking::before{background:linear-gradient(90deg,var(--brand),var(--brand2))}
+    .account-card.savings::before{background:linear-gradient(90deg,var(--accent),#e89c10)}
+    .card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+    .type-badge{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;padding:3px 10px;border-radius:100px;background:var(--brand-light);color:var(--brand)}
+    .acc-num{font-family:var(--mono);font-size:12px;color:var(--muted)}
+    .card-balance{font-size:28px;font-weight:700;letter-spacing:-.5px}
+    .card-currency{font-size:12px;color:var(--muted);margin-top:2px;margin-bottom:16px}
+    .card-actions{display:flex;gap:8px}
+
+    /* Buttons */
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;border-radius:var(--rsm);font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .15s;line-height:1}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .btn-primary{background:var(--brand);color:#fff}
+    .btn-primary:not(:disabled):hover{background:#0a4a2f}
+    .btn-success{background:var(--ok);color:#fff}
+    .btn-success:not(:disabled):hover{background:#16a34a}
+    .btn-outline{background:transparent;color:var(--brand);border:1.5px solid var(--brand)}
+    .btn-outline:not(:disabled):hover{background:var(--brand-light)}
+    .btn-full{width:100%}
+    .btn-sm{padding:6px 14px;font-size:13px}
+
+    /* Forms */
+    .form-group{display:flex;flex-direction:column;gap:6px}
+    .form-group label{font-size:13px;font-weight:600;color:var(--text)}
+    .form-group input,.form-group select{padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--rsm);font-size:14px;color:var(--text);background:var(--surface);transition:border-color .15s;outline:none;font-family:var(--font)}
+    .form-group input:focus,.form-group select:focus{border-color:var(--brand2);box-shadow:0 0 0 3px rgba(26,138,86,.1)}
+    .form-group input::placeholder{color:var(--light)}
+    .field-hint{font-size:12px;color:var(--muted);margin-top:2px}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .auth-form{display:flex;flex-direction:column;gap:16px}
+    .balance-hint{font-size:13px;color:var(--muted);margin-top:-8px}
+
+    /* Alerts */
+    .alert{padding:12px 16px;border-radius:var(--rsm);font-size:14px;font-weight:500}
+    .alert-err{background:var(--err-bg);color:var(--err);border:1px solid var(--err-b)}
+    .alert-ok{background:var(--ok-bg);color:#15803d;border:1px solid var(--ok-b)}
+
+    /* Auth */
+    .auth-page{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0d5c3a 0%,#1a8a56 50%,#0a4a2f 100%);padding:24px}
+    .auth-card{background:#fff;border-radius:var(--rlg);padding:40px;width:100%;max-width:420px;box-shadow:var(--shl)}
+    .auth-card-wide{max-width:560px}
+    .auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:24px}
+    .auth-logo .logo-mark{background:var(--brand);color:#fff}
+    .auth-logo .logo-text{color:var(--brand);font-weight:800;font-size:24px}
+    .auth-card h2{font-size:22px;font-weight:700;margin-bottom:4px}
+    .auth-subtitle{color:var(--muted);font-size:14px;margin-bottom:24px}
+    .auth-footer{text-align:center;font-size:14px;color:var(--muted);margin-top:20px}
+    .auth-footer a{color:var(--brand2);font-weight:600;text-decoration:none;cursor:pointer}
+    .auth-demo{text-align:center;font-size:12px;color:var(--muted);margin-top:12px}
+    .auth-demo code{background:var(--bg);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px}
+
+    /* Country select */
+    .country-select{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .country-option{display:flex;align-items:center;gap:10px;padding:12px 16px;border:2px solid var(--border);border-radius:var(--rsm);cursor:pointer;transition:all .15s;user-select:none}
+    .country-option input{display:none}
+    .country-option:hover{border-color:var(--brand2);background:var(--brand-light)}
+    .country-option.selected{border-color:var(--brand);background:var(--brand-light)}
+    .country-flag{font-size:24px}
+    .country-label{font-size:13px;font-weight:600;color:var(--text)}
+
+    /* Transactions table */
+    .table-wrap{overflow-x:auto;border-radius:var(--r);border:1px solid var(--border)}
+    .tx-table{width:100%;border-collapse:collapse;background:var(--surface)}
+    .tx-table th{padding:12px 16px;text-align:left;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:var(--bg);border-bottom:1px solid var(--border)}
+    .tx-table td{padding:14px 16px;font-size:14px;border-bottom:1px solid var(--border-light);vertical-align:middle}
+    .tx-row:last-child td{border-bottom:none}
+    .tx-row:hover td{background:var(--bg)}
+    .tx-date{color:var(--muted);font-size:13px;white-space:nowrap}
+    .tx-desc{max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .tx-party{color:var(--muted);font-size:13px}
+    .tx-amt{font-weight:600;font-family:var(--mono);text-align:right;white-space:nowrap}
+    .credit{color:var(--ok)} .debit{color:var(--err)}
+
+    .type-badge2{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:3px 8px;border-radius:100px;white-space:nowrap}
+    .type-deposit{background:#f0fdf4;color:#16a34a}
+    .type-withdrawal{background:#fef2f2;color:#dc2626}
+    .type-transfer{background:#eff6ff;color:#2563eb}
+    .type-exchange{background:#fefce8;color:#ca8a04}
+
+    .status-badge{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:3px 8px;border-radius:100px}
+    .status-completed{background:#f0fdf4;color:#16a34a}
+    .status-pending{background:#fefce8;color:#ca8a04}
+    .status-failed{background:#fef2f2;color:#dc2626}
+
+    /* Filters */
+    .filter-tabs{display:flex;gap:8px;flex-wrap:wrap}
+    .filter-tab{padding:7px 16px;border-radius:100px;border:1.5px solid var(--border);background:var(--surface);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+    .filter-tab:hover{border-color:var(--brand2);color:var(--brand)}
+    .filter-tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+
+    /* Modal */
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:200;padding:24px}
+    .modal{background:#fff;border-radius:var(--rlg);width:100%;max-width:460px;box-shadow:var(--shl);animation:mi .15s ease}
+    @keyframes mi{from{opacity:0;transform:scale(.97) translateY(8px)}to{opacity:1;transform:none}}
+    .modal-head{display:flex;align-items:center;justify-content:space-between;padding:20px 24px 0}
+    .modal-head h3{font-size:17px;font-weight:700}
+    .modal-x{background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:4px;border-radius:4px}
+    .modal-x:hover{color:var(--text)}
+    .modal-body{padding:20px 24px 24px;display:flex;flex-direction:column;gap:16px}
+    .modal-info{font-size:13px;color:var(--muted)}
+    .modal-actions{display:flex;gap:10px;justify-content:flex-end;padding-top:4px}
+
+    /* Transfer */
+    .transfer-layout{display:grid;grid-template-columns:1fr 340px;gap:24px;align-items:start}
+    .transfer-card,.transfer-info{background:var(--surface);border:1px solid var(--border);border-radius:var(--rlg);padding:24px;box-shadow:var(--sh)}
+    .transfer-info{display:flex;flex-direction:column;gap:16px}
+    .transfer-info h3{font-size:16px;font-weight:700}
+    .rates-list{display:flex;flex-direction:column;gap:10px}
+    .rate-item{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg);border-radius:var(--rsm);font-size:14px;font-weight:500}
+    .rate-arrow{color:var(--muted)}
+    .transfer-note{background:var(--brand-light);border-radius:var(--rsm);padding:16px}
+    .transfer-note h4{font-size:13px;font-weight:700;color:var(--brand);margin-bottom:8px}
+    .transfer-note ul{padding-left:16px;display:flex;flex-direction:column;gap:4px}
+    .transfer-note li{font-size:13px;color:var(--brand)}
+    .ex-preview{background:#fefce8;border:1px solid #fde68a;border-radius:var(--rsm);padding:14px;display:flex;flex-direction:column;gap:4px;font-size:13px;color:#92400e}
+    .ex-preview strong{font-size:15px}
+    .rate-note{color:#a16207;font-size:12px}
+
+    /* Account type select */
+    .type-select{display:flex;flex-direction:column;gap:10px}
+    .type-opt{display:flex;align-items:center;gap:14px;padding:14px 16px;border:2px solid var(--border);border-radius:var(--rsm);cursor:pointer;transition:all .15s;user-select:none}
+    .type-opt input{display:none}
+    .type-opt:hover{border-color:var(--brand2);background:var(--brand-light)}
+    .type-opt.selected{border-color:var(--brand);background:var(--brand-light)}
+    .type-icon{font-size:24px}
+    .type-opt strong{font-size:14px}
+    .type-opt p{font-size:12px;color:var(--muted);margin-top:2px}
+
+    @media(max-width:768px){
+      .header-inner{padding:0 16px;gap:16px}
+      .nav{display:none}
+      .main{padding:20px 16px}
+      .form-row{grid-template-columns:1fr}
+      .transfer-layout{grid-template-columns:1fr}
+      .balance-amount{font-size:32px}
+      .country-select{grid-template-columns:1fr}
+      .auth-card{padding:28px 24px}
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef, createContext, useContext } = React;
+
+/* ── DB (localStorage) ─────────────────────────────────────────── */
+const DB = {
+  get(k) { try { return JSON.parse(localStorage.getItem('badori_'+k) || 'null'); } catch { return null; } },
+  set(k, v) { localStorage.setItem('badori_'+k, JSON.stringify(v)); },
+  init() {
+    if (DB.get('seeded')) return;
+    const users = [
+      { id:'u-rw-1', full_name:'Amara Nkurunziza', email:'amara@badori.rw', phone:'+250788000001', password:'demo1234', country:'RW', created_at: new Date().toISOString() },
+      { id:'u-dj-1', full_name:'Fadumo Hassan', email:'fadumo@badori.dj', phone:'+25377000001', password:'demo1234', country:'DJ', created_at: new Date().toISOString() },
+    ];
+    const accounts = [
+      { id:'a-rw-1', user_id:'u-rw-1', account_number:'RW-001001-0001', account_type:'checking', currency:'RWF', balance:250000, is_active:1, created_at: new Date().toISOString() },
+      { id:'a-rw-2', user_id:'u-rw-1', account_number:'RW-001001-0002', account_type:'savings',  currency:'RWF', balance:1500000, is_active:1, created_at: new Date().toISOString() },
+      { id:'a-dj-1', user_id:'u-dj-1', account_number:'DJ-001001-0001', account_type:'checking', currency:'DJF', balance:50000, is_active:1, created_at: new Date().toISOString() },
+      { id:'a-dj-2', user_id:'u-dj-1', account_number:'DJ-001001-0002', account_type:'savings',  currency:'DJF', balance:200000, is_active:1, created_at: new Date().toISOString() },
+    ];
+    const transactions = [
+      { id:'t-1', from_account_id:null, to_account_id:'a-rw-1', type:'deposit', amount:250000, currency:'RWF', converted_amount:null, converted_currency:null, exchange_rate:null, description:'Initial deposit', status:'completed', created_at:new Date(Date.now()-86400000*3).toISOString() },
+      { id:'t-2', from_account_id:'a-rw-1', to_account_id:'a-rw-2', type:'transfer', amount:50000, currency:'RWF', converted_amount:null, converted_currency:null, exchange_rate:null, description:'Monthly savings', status:'completed', created_at:new Date(Date.now()-86400000*2).toISOString() },
+      { id:'t-3', from_account_id:null, to_account_id:'a-dj-1', type:'deposit', amount:50000, currency:'DJF', converted_amount:null, converted_currency:null, exchange_rate:null, description:'Initial deposit', status:'completed', created_at:new Date(Date.now()-86400000).toISOString() },
+      { id:'t-4', from_account_id:null, to_account_id:'a-rw-2', type:'deposit', amount:1500000, currency:'RWF', converted_amount:null, converted_currency:null, exchange_rate:null, description:'Savings deposit', status:'completed', created_at:new Date(Date.now()-86400000*4).toISOString() },
+    ];
+    DB.set('users', users);
+    DB.set('accounts', accounts);
+    DB.set('transactions', transactions);
+    DB.set('seeded', true);
+  }
+};
+
+const RATES = { RWF_DJF: 0.0644, DJF_RWF: 15.53 };
+
+/* ── Helpers ──────────────────────────────────────────────────── */
+function uid() { return Math.random().toString(36).slice(2)+Date.now().toString(36); }
+function fmt(amount, currency) {
+  const n = Math.round(amount).toLocaleString();
+  return `${n} ${currency}`;
+}
+function fmtDate(s) {
+  return new Date(s).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+function flag(c) { return c === 'RW' ? '🇷🇼' : '🇩🇯'; }
+function cname(c) { return c === 'RW' ? 'Rwanda' : 'Djibouti'; }
+
+/* ── Auth store ──────────────────────────────────────────────── */
+function getSession() {
+  const u = DB.get('session_user');
+  return u;
+}
+
+const AuthCtx = createContext(null);
+function AuthProvider({ children }) {
+  const [user, setUser] = useState(() => getSession());
+
+  const login = useCallback((email, password) => {
+    const users = DB.get('users') || [];
+    const u = users.find(x => x.email === email && x.password === password);
+    if (!u) throw new Error('Invalid email or password');
+    DB.set('session_user', u);
+    setUser(u);
+  }, []);
+
+  const register = useCallback((payload) => {
+    const users = DB.get('users') || [];
+    if (users.find(x => x.email === payload.email)) throw new Error('Email already registered');
+    if (!['RW','DJ'].includes(payload.country)) throw new Error('Country must be RW or DJ');
+    if (payload.password.length < 8) throw new Error('Password must be at least 8 characters');
+    const currency = payload.country === 'RW' ? 'RWF' : 'DJF';
+    const prefix = payload.country === 'RW' ? 'RW' : 'DJ';
+    const newUser = { id: uid(), ...payload, created_at: new Date().toISOString() };
+    const newAcc = {
+      id: uid(), user_id: newUser.id,
+      account_number: `${prefix}-${Date.now().toString().slice(-6)}-${Math.floor(Math.random()*9000+1000)}`,
+      account_type: 'checking', currency, balance: 0, is_active: 1,
+      created_at: new Date().toISOString()
+    };
+    DB.set('users', [...users, newUser]);
+    const accs = DB.get('accounts') || [];
+    DB.set('accounts', [...accs, newAcc]);
+    DB.set('session_user', newUser);
+    setUser(newUser);
+  }, []);
+
+  const logout = useCallback(() => {
+    DB.set('session_user', null);
+    setUser(null);
+  }, []);
+
+  return <AuthCtx.Provider value={{ user, login, register, logout }}>{children}</AuthCtx.Provider>;
+}
+function useAuth() { return useContext(AuthCtx); }
+
+/* ── API (localStorage) ─────────────────────────────────────── */
+const api = {
+  getAccounts(userId) {
+    return (DB.get('accounts') || []).filter(a => a.user_id === userId && a.is_active);
+  },
+  getTransactions(userId) {
+    const myIds = api.getAccounts(userId).map(a => a.id);
+    const all = DB.get('transactions') || [];
+    const users = DB.get('users') || [];
+    const accs = DB.get('accounts') || [];
+    return all
+      .filter(t => myIds.includes(t.from_account_id) || myIds.includes(t.to_account_id))
+      .sort((a,b) => new Date(b.created_at) - new Date(a.created_at))
+      .map(t => {
+        const fa = accs.find(a => a.id === t.from_account_id);
+        const ta = accs.find(a => a.id === t.to_account_id);
+        const fu = fa ? users.find(u => u.id === fa.user_id) : null;
+        const tu = ta ? users.find(u => u.id === ta.user_id) : null;
+        return { ...t, from_account_number: fa?.account_number, to_account_number: ta?.account_number, from_user_name: fu?.full_name, to_user_name: tu?.full_name };
+      });
+  },
+  deposit(accountId, amount, desc) {
+    const accs = DB.get('accounts') || [];
+    const idx = accs.findIndex(a => a.id === accountId);
+    if (idx < 0) throw new Error('Account not found');
+    accs[idx] = { ...accs[idx], balance: accs[idx].balance + amount };
+    DB.set('accounts', accs);
+    const tx = { id: uid(), from_account_id: null, to_account_id: accountId, type: 'deposit', amount, currency: accs[idx].currency, converted_amount: null, converted_currency: null, exchange_rate: null, description: desc || 'Cash deposit', status: 'completed', created_at: new Date().toISOString() };
+    DB.set('transactions', [...(DB.get('transactions')||[]), tx]);
+    return accs[idx];
+  },
+  withdraw(accountId, amount, desc) {
+    const accs = DB.get('accounts') || [];
+    const idx = accs.findIndex(a => a.id === accountId);
+    if (idx < 0) throw new Error('Account not found');
+    if (accs[idx].balance < amount) throw new Error('Insufficient funds');
+    accs[idx] = { ...accs[idx], balance: accs[idx].balance - amount };
+    DB.set('accounts', accs);
+    const tx = { id: uid(), from_account_id: accountId, to_account_id: null, type: 'withdrawal', amount, currency: accs[idx].currency, converted_amount: null, converted_currency: null, exchange_rate: null, description: desc || 'Cash withdrawal', status: 'completed', created_at: new Date().toISOString() };
+    DB.set('transactions', [...(DB.get('transactions')||[]), tx]);
+    return accs[idx];
+  },
+  transfer(fromId, toNumber, amount, desc) {
+    const accs = DB.get('accounts') || [];
+    const fi = accs.findIndex(a => a.id === fromId);
+    const ti = accs.findIndex(a => a.account_number === toNumber && a.is_active);
+    if (fi < 0) throw new Error('Source account not found');
+    if (ti < 0) throw new Error('Destination account not found');
+    if (fi === ti) throw new Error('Cannot transfer to same account');
+    if (accs[fi].balance < amount) throw new Error('Insufficient funds');
+    const cross = accs[fi].currency !== accs[ti].currency;
+    const rateKey = accs[fi].currency + '_' + accs[ti].currency;
+    const rate = RATES[rateKey];
+    const credit = cross ? amount * rate : amount;
+    accs[fi] = { ...accs[fi], balance: accs[fi].balance - amount };
+    accs[ti] = { ...accs[ti], balance: accs[ti].balance + credit };
+    DB.set('accounts', accs);
+    const tx = {
+      id: uid(), from_account_id: fromId, to_account_id: accs[ti].id,
+      type: cross ? 'exchange' : 'transfer',
+      amount, currency: accs[fi].currency,
+      converted_amount: cross ? credit : null,
+      converted_currency: cross ? accs[ti].currency : null,
+      exchange_rate: cross ? rate : null,
+      description: desc || 'Money transfer', status: 'completed',
+      created_at: new Date().toISOString()
+    };
+    DB.set('transactions', [...(DB.get('transactions')||[]), tx]);
+    return tx;
+  },
+  createAccount(userId, type) {
+    const users = DB.get('users') || [];
+    const u = users.find(x => x.id === userId);
+    const currency = u.country === 'RW' ? 'RWF' : 'DJF';
+    const prefix = u.country === 'RW' ? 'RW' : 'DJ';
+    const acc = {
+      id: uid(), user_id: userId,
+      account_number: `${prefix}-${Date.now().toString().slice(-6)}-${Math.floor(Math.random()*9000+1000)}`,
+      account_type: type, currency, balance: 0, is_active: 1, created_at: new Date().toISOString()
+    };
+    DB.set('accounts', [...(DB.get('accounts')||[]), acc]);
+    return acc;
+  }
+};
+
+/* ── Router ────────────────────────────────────────────────────── */
+const RouterCtx = createContext(null);
+function Router({ children }) {
+  const [page, setPage] = useState(() => location.hash.slice(1) || 'dashboard');
+  useEffect(() => {
+    const handler = () => setPage(location.hash.slice(1) || 'dashboard');
+    window.addEventListener('hashchange', handler);
+    return () => window.removeEventListener('hashchange', handler);
+  }, []);
+  const navigate = useCallback((p) => { location.hash = p; }, []);
+  return <RouterCtx.Provider value={{ page, navigate }}>{children}</RouterCtx.Provider>;
+}
+function useRouter() { return useContext(RouterCtx); }
+
+/* ── Components ────────────────────────────────────────────────── */
+function Modal({ title, onClose, children }) {
+  useEffect(() => {
+    const h = e => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', h);
+    return () => document.removeEventListener('keydown', h);
+  }, [onClose]);
+  return (
+    <div className="overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-head">
+          <h3>{title}</h3>
+          <button className="modal-x" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function AccountCard({ account, onDeposit, onWithdraw }) {
+  return (
+    <div className={`account-card ${account.account_type}`}>
+      <div className="card-head">
+        <span className="type-badge">{account.account_type}</span>
+        <span className="acc-num">{account.account_number}</span>
+      </div>
+      <div className="card-balance">{fmt(account.balance, account.currency)}</div>
+      <div className="card-currency">{account.currency}</div>
+      <div className="card-actions">
+        {onDeposit && <button className="btn btn-success btn-sm" onClick={() => onDeposit(account)}>+ Deposit</button>}
+        {onWithdraw && <button className="btn btn-outline btn-sm" onClick={() => onWithdraw(account)}>− Withdraw</button>}
+      </div>
+    </div>
+  );
+}
+
+function TxRow({ tx, myIds }) {
+  const isCredit = tx.to_account_id && myIds.includes(tx.to_account_id);
+  const isDebit = tx.from_account_id && myIds.includes(tx.from_account_id);
+  let sign = '', cls = '';
+  if (tx.type === 'deposit') { sign = '+'; cls = 'credit'; }
+  else if (tx.type === 'withdrawal') { sign = '−'; cls = 'debit'; }
+  else if (isCredit && !isDebit) { sign = '+'; cls = 'credit'; }
+  else if (isDebit) { sign = '−'; cls = 'debit'; }
+  const dispAmt = isCredit && tx.converted_amount ? tx.converted_amount : tx.amount;
+  const dispCur = isCredit && tx.converted_currency ? tx.converted_currency : tx.currency;
+  const party = isCredit ? (tx.from_user_name || tx.from_account_number || 'External') : (tx.to_user_name || tx.to_account_number || 'External');
+  const labels = { deposit:'Deposit', withdrawal:'Withdrawal', transfer:'Transfer', exchange:'Exchange' };
+  return (
+    <tr className="tx-row">
+      <td className="tx-date">{fmtDate(tx.created_at)}</td>
+      <td><span className={`type-badge2 type-${tx.type}`}>{labels[tx.type]}</span></td>
+      <td className="tx-desc">{tx.description || '—'}</td>
+      <td className="tx-party">{party}</td>
+      <td className={`tx-amt ${cls}`}>{sign}{fmt(dispAmt, dispCur)}</td>
+      <td><span className={`status-badge status-${tx.status}`}>{tx.status}</span></td>
+    </tr>
+  );
+}
+
+function TxModal({ account, type, onClose, onDone }) {
+  const [amount, setAmount] = useState('');
+  const [desc, setDesc] = useState('');
+  const [err, setErr] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  function handle() {
+    const n = parseFloat(amount);
+    if (!n || n <= 0) { setErr('Enter a valid amount'); return; }
+    setLoading(true);
+    try {
+      if (type === 'deposit') api.deposit(account.id, n, desc || undefined);
+      else api.withdraw(account.id, n, desc || undefined);
+      onDone();
+    } catch(e) { setErr(e.message); } finally { setLoading(false); }
+  }
+
+  return (
+    <Modal title={type === 'deposit' ? `Deposit to ${account.account_number}` : `Withdraw from ${account.account_number}`} onClose={onClose}>
+      {err && <div className="alert alert-err">{err}</div>}
+      <div className="form-group">
+        <label>Amount ({account.currency})</label>
+        <input type="number" value={amount} onChange={e=>setAmount(e.target.value)} placeholder="0" min="1" autoFocus />
+      </div>
+      <div className="form-group">
+        <label>Description (optional)</label>
+        <input type="text" value={desc} onChange={e=>setDesc(e.target.value)} placeholder={type==='deposit'?'Salary, gift…':'Bill payment…'} />
+      </div>
+      {type === 'withdraw' && <p className="modal-info">Available: {fmt(account.balance, account.currency)}</p>}
+      <div className="modal-actions">
+        <button className="btn btn-outline" onClick={onClose}>Cancel</button>
+        <button className={`btn ${type==='deposit'?'btn-success':'btn-primary'}`} onClick={handle} disabled={loading}>
+          {loading ? 'Processing…' : type==='deposit' ? 'Deposit' : 'Withdraw'}
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+/* ── Pages ──────────────────────────────────────────────────────── */
+function LoginPage() {
+  const { login } = useAuth();
+  const { navigate } = useRouter();
+  const [email, setEmail] = useState('');
+  const [pw, setPw] = useState('');
+  const [err, setErr] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  function submit(e) {
+    e.preventDefault(); setErr(''); setLoading(true);
+    try { login(email, pw); navigate('dashboard'); }
+    catch(ex) { setErr(ex.message); }
+    finally { setLoading(false); }
+  }
+
+  return (
+    <div className="auth-page">
+      <div className="auth-card">
+        <div className="auth-logo">
+          <span className="logo-mark">B</span>
+          <span className="logo-text">Badori</span>
+        </div>
+        <h2>Welcome back</h2>
+        <p className="auth-subtitle">Sign in to your account</p>
+        <form onSubmit={submit} className="auth-form">
+          {err && <div className="alert alert-err">{err}</div>}
+          <div className="form-group">
+            <label>Email address</label>
+            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" required autoFocus />
+          </div>
+          <div className="form-group">
+            <label>Password</label>
+            <input type="password" value={pw} onChange={e=>setPw(e.target.value)} placeholder="••••••••" required />
+          </div>
+          <button type="submit" className="btn btn-primary btn-full" disabled={loading}>{loading?'Signing in…':'Sign in'}</button>
+        </form>
+        <p className="auth-footer">Don't have an account? <a onClick={()=>navigate('register')}>Create one</a></p>
+        <p className="auth-demo">Demo Rwanda: <code>amara@badori.rw</code> / <code>demo1234</code></p>
+        <p className="auth-demo">Demo Djibouti: <code>fadumo@badori.dj</code> / <code>demo1234</code></p>
+      </div>
+    </div>
+  );
+}
+
+function RegisterPage() {
+  const { register } = useAuth();
+  const { navigate } = useRouter();
+  const [form, setForm] = useState({ full_name:'', email:'', phone:'', password:'', confirm:'', country:'RW' });
+  const [err, setErr] = useState('');
+  const [loading, setLoading] = useState(false);
+  const u = k => v => setForm(f => ({...f, [k]:v}));
+
+  function submit(e) {
+    e.preventDefault(); setErr('');
+    if (form.password !== form.confirm) { setErr('Passwords do not match'); return; }
+    setLoading(true);
+    try { register({ full_name:form.full_name, email:form.email, phone:form.phone, password:form.password, country:form.country }); navigate('dashboard'); }
+    catch(ex) { setErr(ex.message); }
+    finally { setLoading(false); }
+  }
+
+  return (
+    <div className="auth-page">
+      <div className="auth-card auth-card-wide">
+        <div className="auth-logo">
+          <span className="logo-mark">B</span>
+          <span className="logo-text">Badori</span>
+        </div>
+        <h2>Open your account</h2>
+        <p className="auth-subtitle">Available in Rwanda and Djibouti</p>
+        <form onSubmit={submit} className="auth-form">
+          {err && <div className="alert alert-err">{err}</div>}
+          <div className="form-group">
+            <label>Country</label>
+            <div className="country-select">
+              {['RW','DJ'].map(c => (
+                <label key={c} className={`country-option${form.country===c?' selected':''}`}>
+                  <input type="radio" name="country" value={c} checked={form.country===c} onChange={()=>u('country')(c)} />
+                  <span className="country-flag">{flag(c)}</span>
+                  <span className="country-label">{c==='RW'?'Rwanda (RWF)':'Djibouti (DJF)'}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Full name</label>
+              <input type="text" value={form.full_name} onChange={e=>u('full_name')(e.target.value)} placeholder="Amara Nkurunziza" required />
+            </div>
+            <div className="form-group">
+              <label>Phone</label>
+              <input type="tel" value={form.phone} onChange={e=>u('phone')(e.target.value)} placeholder={form.country==='RW'?'+250 7XX XXX XXX':'+253 7X XXX XXX'} required />
+            </div>
+          </div>
+          <div className="form-group">
+            <label>Email address</label>
+            <input type="email" value={form.email} onChange={e=>u('email')(e.target.value)} placeholder="you@example.com" required />
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Password</label>
+              <input type="password" value={form.password} onChange={e=>u('password')(e.target.value)} placeholder="Min. 8 characters" required minLength={8} />
+            </div>
+            <div className="form-group">
+              <label>Confirm password</label>
+              <input type="password" value={form.confirm} onChange={e=>u('confirm')(e.target.value)} placeholder="Repeat password" required />
+            </div>
+          </div>
+          <button type="submit" className="btn btn-primary btn-full" disabled={loading}>{loading?'Creating account…':'Create account'}</button>
+        </form>
+        <p className="auth-footer">Already have an account? <a onClick={()=>navigate('login')}>Sign in</a></p>
+      </div>
+    </div>
+  );
+}
+
+function DashboardPage() {
+  const { user } = useAuth();
+  const { navigate } = useRouter();
+  const [accounts, setAccounts] = useState([]);
+  const [txs, setTxs] = useState([]);
+  const [modal, setModal] = useState(null); // { account, type }
+
+  function load() {
+    setAccounts(api.getAccounts(user.id));
+    setTxs(api.getTransactions(user.id));
+  }
+  useEffect(load, [user.id]);
+
+  const totalBalance = accounts.reduce((s,a)=>s+a.balance, 0);
+  const currency = accounts[0]?.currency;
+  const myIds = accounts.map(a=>a.id);
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <h1>Good morning, {user.full_name.split(' ')[0]} {flag(user.country)}</h1>
+          <p className="page-subtitle">{cname(user.country)} · {new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</p>
+        </div>
+        <div className="rate-pill">1 RWF = {RATES.RWF_DJF} DJF</div>
+      </div>
+
+      {currency && (
+        <div className="balance-hero">
+          <p className="balance-label">Total Balance</p>
+          <p className="balance-amount">{fmt(totalBalance, currency)}</p>
+        </div>
+      )}
+
+      <div className="section">
+        <h2>Your Accounts</h2>
+        <div className="accounts-grid">
+          {accounts.map(a => (
+            <AccountCard key={a.id} account={a}
+              onDeposit={acc => setModal({ account:acc, type:'deposit' })}
+              onWithdraw={acc => setModal({ account:acc, type:'withdraw' })} />
+          ))}
+        </div>
+      </div>
+
+      <div className="section">
+        <h2>Recent Transactions</h2>
+        {txs.length === 0
+          ? <p className="empty">No transactions yet. Make your first deposit!</p>
+          : (
+            <div className="table-wrap">
+              <table className="tx-table">
+                <thead><tr><th>Date</th><th>Type</th><th>Description</th><th>Counterparty</th><th>Amount</th><th>Status</th></tr></thead>
+                <tbody>{txs.slice(0,5).map(t=><TxRow key={t.id} tx={t} myIds={myIds}/>)}</tbody>
+              </table>
+            </div>
+          )}
+        {txs.length > 5 && (
+          <button className="btn btn-outline" style={{alignSelf:'flex-start'}} onClick={()=>navigate('history')}>
+            View all {txs.length} transactions →
+          </button>
+        )}
+      </div>
+
+      {modal && (
+        <TxModal account={modal.account} type={modal.type}
+          onClose={()=>setModal(null)} onDone={()=>{ setModal(null); load(); }} />
+      )}
+    </div>
+  );
+}
+
+function TransferPage() {
+  const { user } = useAuth();
+  const [accounts, setAccounts] = useState([]);
+  const [from, setFrom] = useState('');
+  const [toNum, setToNum] = useState('');
+  const [amount, setAmount] = useState('');
+  const [desc, setDesc] = useState('');
+  const [preview, setPreview] = useState(null);
+  const [err, setErr] = useState('');
+  const [ok, setOk] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  function load() {
+    const accs = api.getAccounts(user.id);
+    setAccounts(accs);
+    if (accs.length && !from) setFrom(accs[0].id);
+  }
+  useEffect(load, [user.id]);
+
+  const fromAcc = accounts.find(a=>a.id===from);
+
+  function calcPreview() {
+    const n = parseFloat(amount);
+    if (!fromAcc || !n || n<=0) return;
+    const destCur = toNum.startsWith('DJ-') ? 'DJF' : toNum.startsWith('RW-') ? 'RWF' : null;
+    if (destCur && destCur !== fromAcc.currency) {
+      const rk = fromAcc.currency+'_'+destCur;
+      setPreview({ rate: RATES[rk], converted: n*RATES[rk], toCur: destCur });
+    } else setPreview(null);
+  }
+
+  function submit(e) {
+    e.preventDefault(); setErr(''); setOk('');
+    const n = parseFloat(amount);
+    if (!n||n<=0) { setErr('Enter a valid amount'); return; }
+    setLoading(true);
+    try {
+      const tx = api.transfer(from, toNum.trim().toUpperCase(), n, desc||undefined);
+      setOk(tx.converted_amount
+        ? `Sent ${fmt(tx.amount,tx.currency)} → ${fmt(tx.converted_amount,tx.converted_currency)}`
+        : `Sent ${fmt(tx.amount,tx.currency)} successfully`);
+      setToNum(''); setAmount(''); setDesc(''); setPreview(null);
+      load();
+    } catch(ex) { setErr(ex.message); }
+    finally { setLoading(false); }
+  }
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <h1>Send Money</h1>
+          <p className="page-subtitle">Transfer to any Badori account — Rwanda or Djibouti</p>
+        </div>
+      </div>
+      <div className="transfer-layout">
+        <div className="transfer-card">
+          <form onSubmit={submit} className="auth-form">
+            {err && <div className="alert alert-err">{err}</div>}
+            {ok && <div className="alert alert-ok">{ok}</div>}
+            <div className="form-group">
+              <label>From account</label>
+              <select value={from} onChange={e=>{setFrom(e.target.value);setPreview(null);}}>
+                {accounts.map(a=>(
+                  <option key={a.id} value={a.id}>{a.account_number} — {fmt(a.balance,a.currency)} ({a.account_type})</option>
+                ))}
+              </select>
+            </div>
+            {fromAcc && <div className="balance-hint">Available: {fmt(fromAcc.balance, fromAcc.currency)}</div>}
+            <div className="form-group">
+              <label>Recipient account number</label>
+              <input type="text" value={toNum} onChange={e=>setToNum(e.target.value)} onBlur={calcPreview}
+                placeholder="RW-XXXXXX-XXXX or DJ-XXXXXX-XXXX" required />
+              <span className="field-hint">Supports cross-country transfers with automatic exchange</span>
+            </div>
+            <div className="form-group">
+              <label>Amount ({fromAcc?.currency})</label>
+              <input type="number" value={amount} onChange={e=>setAmount(e.target.value)} onBlur={calcPreview}
+                placeholder="0" min="1" required />
+            </div>
+            {preview && fromAcc && (
+              <div className="ex-preview">
+                <span>Exchange preview</span>
+                <strong>{fmt(parseFloat(amount),fromAcc.currency)} → {fmt(preview.converted, preview.toCur)}</strong>
+                <span className="rate-note">Rate: 1 {fromAcc.currency} = {preview.rate} {preview.toCur}</span>
+              </div>
+            )}
+            <div className="form-group">
+              <label>Description (optional)</label>
+              <input type="text" value={desc} onChange={e=>setDesc(e.target.value)} placeholder="Rent, invoice, gift…" />
+            </div>
+            <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
+              {loading ? 'Sending…' : 'Send money'}
+            </button>
+          </form>
+        </div>
+        <div className="transfer-info">
+          <h3>Exchange rates</h3>
+          <div className="rates-list">
+            <div className="rate-item"><span>1 RWF</span><span className="rate-arrow">→</span><span>{RATES.RWF_DJF} DJF</span></div>
+            <div className="rate-item"><span>1 DJF</span><span className="rate-arrow">→</span><span>{RATES.DJF_RWF} RWF</span></div>
+          </div>
+          <div className="transfer-note">
+            <h4>How it works</h4>
+            <ul>
+              <li>Transfers within the same country are instant</li>
+              <li>Cross-country transfers use live exchange rates</li>
+              <li>No hidden fees on transfers</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HistoryPage() {
+  const { user } = useAuth();
+  const [accounts, setAccounts] = useState([]);
+  const [txs, setTxs] = useState([]);
+  const [filter, setFilter] = useState('all');
+
+  useEffect(() => {
+    setAccounts(api.getAccounts(user.id));
+    setTxs(api.getTransactions(user.id));
+  }, [user.id]);
+
+  const filtered = filter==='all' ? txs : txs.filter(t=>t.type===filter);
+  const myIds = accounts.map(a=>a.id);
+  const filters = ['all','deposit','withdrawal','transfer','exchange'];
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <h1>Transaction History</h1>
+          <p className="page-subtitle">{txs.length} total transactions</p>
+        </div>
+      </div>
+      <div className="filter-tabs">
+        {filters.map(f=>(
+          <button key={f} className={`filter-tab${filter===f?' active':''}`} onClick={()=>setFilter(f)}>
+            {f.charAt(0).toUpperCase()+f.slice(1)}
+          </button>
+        ))}
+      </div>
+      {filtered.length===0
+        ? <p className="empty">No {filter==='all'?'':filter} transactions found.</p>
+        : (
+          <div className="table-wrap">
+            <table className="tx-table">
+              <thead><tr><th>Date</th><th>Type</th><th>Description</th><th>Counterparty</th><th>Amount</th><th>Status</th></tr></thead>
+              <tbody>{filtered.map(t=><TxRow key={t.id} tx={t} myIds={myIds}/>)}</tbody>
+            </table>
+          </div>
+        )}
+    </div>
+  );
+}
+
+function AccountsPage() {
+  const { user } = useAuth();
+  const [accounts, setAccounts] = useState([]);
+  const [modal, setModal] = useState(null);
+  const [newModal, setNewModal] = useState(false);
+  const [newType, setNewType] = useState('savings');
+  const [createErr, setCreateErr] = useState('');
+
+  function load() { setAccounts(api.getAccounts(user.id)); }
+  useEffect(load, [user.id]);
+
+  function createAccount() {
+    setCreateErr('');
+    try { api.createAccount(user.id, newType); setNewModal(false); load(); }
+    catch(e) { setCreateErr(e.message); }
+  }
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <h1>My Accounts</h1>
+          <p className="page-subtitle">{accounts.length} account{accounts.length!==1?'s':''}</p>
+        </div>
+        <button className="btn btn-primary" onClick={()=>setNewModal(true)}>+ New Account</button>
+      </div>
+
+      <div className="accounts-grid-lg">
+        {accounts.map(a=>(
+          <AccountCard key={a.id} account={a}
+            onDeposit={acc=>setModal({account:acc,type:'deposit'})}
+            onWithdraw={acc=>setModal({account:acc,type:'withdraw'})} />
+        ))}
+      </div>
+
+      {newModal && (
+        <Modal title="Open New Account" onClose={()=>setNewModal(false)}>
+          {createErr && <div className="alert alert-err">{createErr}</div>}
+          <p className="modal-info">Choose the account type. Currency matches your country.</p>
+          <div className="form-group">
+            <label>Account type</label>
+            <div className="type-select">
+              {['checking','savings'].map(t=>(
+                <label key={t} className={`type-opt${newType===t?' selected':''}`}>
+                  <input type="radio" name="type" value={t} checked={newType===t} onChange={()=>setNewType(t)} />
+                  <span className="type-icon">{t==='checking'?'💳':'🏦'}</span>
+                  <div>
+                    <strong>{t.charAt(0).toUpperCase()+t.slice(1)}</strong>
+                    <p>{t==='checking'?'Day-to-day spending':'Long-term savings'}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="modal-actions">
+            <button className="btn btn-outline" onClick={()=>setNewModal(false)}>Cancel</button>
+            <button className="btn btn-primary" onClick={createAccount}>Create account</button>
+          </div>
+        </Modal>
+      )}
+
+      {modal && (
+        <TxModal account={modal.account} type={modal.type}
+          onClose={()=>setModal(null)} onDone={()=>{setModal(null);load();}} />
+      )}
+    </div>
+  );
+}
+
+/* ── Layout ─────────────────────────────────────────────────────── */
+function Layout({ children }) {
+  const { user, logout } = useAuth();
+  const { page, navigate } = useRouter();
+  const links = [
+    { id:'dashboard', label:'Dashboard' },
+    { id:'transfer', label:'Transfer' },
+    { id:'history', label:'History' },
+    { id:'accounts', label:'Accounts' },
+  ];
+  return (
+    <div className="app">
+      <header className="header">
+        <div className="header-inner">
+          <div className="logo" onClick={()=>navigate('dashboard')}>
+            <span className="logo-mark">B</span>
+            <span className="logo-text">Badori</span>
+          </div>
+          <nav className="nav">
+            {links.map(l=>(
+              <button key={l.id} className={`nav-link${page===l.id?' active':''}`} onClick={()=>navigate(l.id)}>
+                {l.label}
+              </button>
+            ))}
+          </nav>
+          <div className="header-user">
+            <span className="user-flag">{flag(user.country)}</span>
+            <span className="user-name">{user.full_name.split(' ')[0]}</span>
+            <button className="btn-logout" onClick={()=>{logout();navigate('login');}}>Log out</button>
+          </div>
+        </div>
+      </header>
+      <main className="main">{children}</main>
+      <footer className="footer">
+        © 2024 Badori Bank · Rwanda 🇷🇼 &amp; Djibouti 🇩🇯 · All rights reserved
+      </footer>
+    </div>
+  );
+}
+
+/* ── App ────────────────────────────────────────────────────────── */
+function App() {
+  DB.init();
+  return (
+    <Router>
+      <AuthProvider>
+        <AppInner />
+      </AuthProvider>
+    </Router>
+  );
+}
+
+function AppInner() {
+  const { user } = useAuth();
+  const { page, navigate } = useRouter();
+
+  useEffect(() => {
+    if (!user && page !== 'register') navigate('login');
+    if (user && (page === 'login' || page === 'register')) navigate('dashboard');
+  }, [user, page]);
+
+  if (!user) {
+    if (page === 'register') return <RegisterPage />;
+    return <LoginPage />;
+  }
+
+  return (
+    <Layout>
+      {page === 'dashboard' && <DashboardPage />}
+      {page === 'transfer'  && <TransferPage />}
+      {page === 'history'   && <HistoryPage />}
+      {page === 'accounts'  && <AccountsPage />}
+    </Layout>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
